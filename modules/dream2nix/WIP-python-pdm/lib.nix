@@ -174,12 +174,19 @@
 
   # TODO: validate against lock file version.
   parsePackage = environ: item: let
-    sources = sourcesToAttrs item.files;
+    isPathPackage = item ? path;
+    files =
+      if isPathPackage
+      then [{file = item.path;}]
+      else item.files;
+    sources = sourcesToAttrs files;
     compatibleSources =
       lib.filterAttrs
       (
         filename: source:
-          isUsableFilename {inherit environ filename;}
+          if isPathPackage
+          then true
+          else isUsableFilename {inherit environ filename;}
       )
       sources;
     parsedDeps = map libpyproject.pep508.parseString item.dependencies or [];
